@@ -25,6 +25,38 @@ const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
   });
   const [error, setError] = useState('');
 
+  const checkAndSetDefaultPassword = async (userId: string, identifier: string, password: string) => {
+    try {
+      // Get user profile to check role and admission number
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (profileError || !profile) return;
+
+      let isDefaultPassword = false;
+
+      // Check if using default password based on role
+      if (profile.role === 'student' && profile.admission_number) {
+        isDefaultPassword = password === profile.admission_number;
+      } else if (profile.role === 'admin' || profile.role === 'lecturer') {
+        isDefaultPassword = password === 'admin';
+      }
+
+      // Update force_password_change flag if using default password
+      if (isDefaultPassword) {
+        await supabase
+          .from('profiles')
+          .update({ force_password_change: true })
+          .eq('user_id', userId);
+      }
+    } catch (error) {
+      console.error('Error checking default password:', error);
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -54,6 +86,9 @@ const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
       }
 
       if (data.user) {
+        // Check if using default password and update force_password_change flag
+        await checkAndSetDefaultPassword(data.user.id, formData.identifier, formData.password);
+        
         toast.success('Login successful!');
         onAuthSuccess();
       }

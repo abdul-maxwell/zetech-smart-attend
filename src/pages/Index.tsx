@@ -5,6 +5,7 @@ import { User, Session } from '@supabase/supabase-js';
 import AuthForm from '@/components/AuthForm';
 import StudentDashboard from '@/components/StudentDashboard';
 import AdminDashboard from '@/components/AdminDashboard';
+import { PasswordChangeDialog } from '@/components/PasswordChangeDialog';
 import { Button } from '@/components/ui/button';
 import { LogOut, Moon, Sun } from 'lucide-react';
 import { toast } from 'sonner';
@@ -86,6 +87,14 @@ const Index = () => {
     toast.success('Welcome to ZETECH SmartAttend!');
   };
 
+  const handlePasswordChanged = () => {
+    // Refresh the user profile to get updated force_password_change status
+    if (user) {
+      fetchUserProfile(user.id);
+    }
+    toast.success('Password updated successfully!');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -140,11 +149,20 @@ const Index = () => {
         </div>
       </div>
 
+      {/* Password Change Dialog */}
+      <PasswordChangeDialog
+        open={userProfile.force_password_change}
+        userProfile={userProfile}
+        onPasswordChanged={handlePasswordChanged}
+      />
+
       {/* Main Content */}
-      {userProfile.role === 'admin' ? (
-        <AdminDashboard />
-      ) : (
-        <StudentDashboard user={userProfile} />
+      {userProfile.force_password_change ? null : (
+        userProfile.role === 'admin' ? (
+          <AdminDashboard />
+        ) : (
+          <StudentDashboard user={userProfile} />
+        )
       )}
     </div>
   );

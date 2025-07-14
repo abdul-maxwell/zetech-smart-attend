@@ -13,6 +13,7 @@ export interface User {
   phone_number?: string;
   department?: string;
   year_of_study?: number;
+  force_password_change: boolean;
   created_at: string;
   updated_at: string;
 }

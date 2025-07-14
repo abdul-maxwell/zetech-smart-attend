@@ -241,6 +241,7 @@ export type Database = {
           department: string | null
           email: string
           first_name: string
+          force_password_change: boolean
           id: string
           id_number: string | null
           last_name: string
@@ -258,6 +259,7 @@ export type Database = {
           department?: string | null
           email: string
           first_name: string
+          force_password_change?: boolean
           id?: string
           id_number?: string | null
           last_name: string
@@ -275,6 +277,7 @@ export type Database = {
           department?: string | null
           email?: string
           first_name?: string
+          force_password_change?: boolean
           id?: string
           id_number?: string | null
           last_name?: string
@@ -378,7 +381,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { user_uuid: string }
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
     }
     Enums: {
       absence_status: "pending" | "approved" | "rejected"
