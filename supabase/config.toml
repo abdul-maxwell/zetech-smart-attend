@@ -1,1 +1,7 @@
 project_id = "dbbnmvvuppizdpvqaeun"
+
+[functions.generate-weekly-reports]
+verify_jwt = false
+
+[functions.send-ai-email]
+verify_jwt = false
