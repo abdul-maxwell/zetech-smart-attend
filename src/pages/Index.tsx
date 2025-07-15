@@ -19,28 +19,37 @@ const Index = () => {
   const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
+    console.log('Setting up auth listener...');
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('Auth state changed:', event, session);
+        console.log('Auth state changed:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
+          console.log('Fetching profile for user:', session.user.id);
           fetchUserProfile(session.user.id);
         } else {
+          console.log('No user, clearing profile');
           setUserProfile(null);
+          setLoading(false);
         }
-        
-        setLoading(false);
       }
     );
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
+      
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      } else {
+        setLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -48,6 +57,7 @@ const Index = () => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log('Fetching profile for userId:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -57,15 +67,23 @@ const Index = () => {
       if (error) {
         console.error('Error fetching user profile:', error);
         toast.error('Error loading profile');
+        setLoading(false);
         return;
       }
 
       if (data) {
+        console.log('Profile found:', data);
         setUserProfile(data);
+      } else {
+        console.log('No profile found for user');
+        toast.error('No profile found for user');
       }
+      
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching user profile:', error);
       toast.error('Error loading profile');
+      setLoading(false);
     }
   };
 
@@ -95,6 +113,8 @@ const Index = () => {
     toast.success('Password updated successfully!');
   };
 
+  console.log('Render state:', { loading, user: !!user, userProfile: !!userProfile });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -106,8 +126,28 @@ const Index = () => {
     );
   }
 
-  if (!user || !userProfile) {
+  if (!user) {
+    console.log('No authenticated user, showing auth form');
     return <AuthForm onAuthSuccess={handleAuthSuccess} />;
+  }
+
+  if (!userProfile) {
+    console.log('User exists but no profile found, showing error');
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="bg-white p-8 rounded-lg shadow-lg max-w-md">
+            <h2 className="text-xl font-semibold text-red-600 mb-4">Profile Error</h2>
+            <p className="text-gray-600 mb-4">
+              Your account exists but no profile was found. Please contact administrator.
+            </p>
+            <Button onClick={handleSignOut} variant="outline">
+              Sign Out & Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
