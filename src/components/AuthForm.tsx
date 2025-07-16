@@ -63,13 +63,19 @@ const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
     setError('');
 
     try {
+      console.log('Login attempt with:', { identifier: formData.identifier, loginType });
+      
       // Map different login types to email format for Supabase
       let email = formData.identifier;
       
-      // If not already an email, format it
-      if (!email.includes('@')) {
+      // Convert based on login type
+      if (loginType === 'admission' && !email.includes('@')) {
+        email = `${formData.identifier}@zetech.ac.ke`;
+      } else if (loginType !== 'email' && !email.includes('@')) {
         email = `${formData.identifier}@zetech.ac.ke`;
       }
+
+      console.log('Attempting login with email:', email);
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -77,15 +83,17 @@ const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
       });
 
       if (error) {
+        console.error('Auth error:', error);
         if (error.message.includes('Invalid login credentials')) {
           setError('Invalid credentials. Please check your details and try again.');
         } else {
-          setError(error.message);
+          setError(`Authentication failed: ${error.message}`);
         }
         return;
       }
 
       if (data.user) {
+        console.log('Login successful for user:', data.user.id);
         // Check if using default password and update force_password_change flag
         await checkAndSetDefaultPassword(data.user.id, formData.identifier, formData.password);
         
