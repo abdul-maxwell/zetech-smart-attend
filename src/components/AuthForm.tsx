@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, GraduationCap, Eye, EyeOff, Fingerprint } from 'lucide-react';
+import { Loader2, GraduationCap, Eye, EyeOff, Fingerprint, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -24,6 +24,7 @@ const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
     password: '',
   });
   const [error, setError] = useState('');
+  const [bulkCreating, setBulkCreating] = useState(false);
 
   const checkAndSetDefaultPassword = async (userId: string, identifier: string, password: string) => {
     try {
@@ -105,6 +106,23 @@ const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBulkCreate = async () => {
+    setBulkCreating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('bulk-create-users');
+      
+      if (error) throw error;
+      
+      toast.success(`Bulk creation completed! Created ${data.created} users, ${data.errors} errors.`);
+      setError('');
+    } catch (error: any) {
+      console.error('Bulk creation error:', error);
+      setError(`Failed to create users: ${error.message}`);
+    } finally {
+      setBulkCreating(false);
     }
   };
 
@@ -219,6 +237,26 @@ const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
               <span className="bg-white px-2 text-gray-500">Or</span>
             </div>
           </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={handleBulkCreate}
+            disabled={bulkCreating}
+          >
+            {bulkCreating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating Users...
+              </>
+            ) : (
+              <>
+                <Users className="mr-2 h-4 w-4" />
+                Create All User Accounts
+              </>
+            )}
+          </Button>
 
           <Button
             type="button"
